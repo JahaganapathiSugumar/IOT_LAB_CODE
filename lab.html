@@ -1,0 +1,594 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IoT Lab</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f9f9f9;
+        color: #333;
+      }
+
+      .mainContainer {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+      }
+
+      .expContainer {
+        margin-bottom: 20px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #f5f5f5;
+        position: relative;
+      }
+
+      .expContainer h3 {
+        margin: 0 0 15px;
+        color: #007bff;
+      }
+
+      pre {
+        background-color: #272822;
+        color: #f8f8f2;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 14px;
+        white-space: pre-wrap;
+      }
+
+      .copy-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      .copy-btn:hover {
+        background-color: #0056b3;
+      }
+
+      @media (max-width: 768px) {
+        .mainContainer {
+          padding: 10px;
+        }
+
+        .expContainer {
+          padding: 15px;
+        }
+
+        .copy-btn {
+          top: 10px;
+          right: 10px;
+          padding: 6px 10px;
+          font-size: 10px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="mainContainer">
+      <div class="expContainer">
+        <h3>Smart Parking System</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre>
+import RPi.GPIO as GPIO
+import time
+import requests
+import smtplib
+from email.mime.text import MIMEText
+
+GPIO.setmode(GPIO.BCM)
+
+TRIG = 17
+ECHO = 27
+LED_RED = 23
+LED_GREEN = 22
+
+GPIO.setup(TRIG, GPIO.OUT)
+GPIO.setup(ECHO, GPIO.IN)
+GPIO.setup(LED_GREEN, GPIO.OUT)
+GPIO.setup(LED_RED, GPIO.OUT)
+
+api = "Api_key"
+URL = "https://api.thingspeak.com/update"
+
+smtp_server = "smtp.gmail.com"
+port = 587
+email = "Your_Email"
+password = "Password(Key)"
+receiver = "receiver_Email"
+sent = False
+
+def send():
+    global sent
+    if not sent:
+        try:
+            subject = "for checking"
+            body = "Parking slot is occupied"
+            msg = MIMEText(body)
+            msg["Subject"] = subject
+            msg["From"] = email
+            msg["To"] = receiver
+
+            server = smtplib.SMTP(smtp_server, port)
+            server.starttls()
+            server.login(email, password)
+            server.sendmail(email, receiver, msg.as_string())
+            server.quit()
+
+            print("Email sent successfully")
+            sent = True
+        except Exception as e:
+            print(e)
+
+def measure():
+    GPIO.output(TRIG, GPIO.LOW)
+    time.sleep(0.1)
+    GPIO.output(TRIG, GPIO.HIGH)
+    time.sleep(0.00001)
+    GPIO.output(TRIG, GPIO.LOW)
+
+    while GPIO.input(ECHO) == GPIO.LOW:
+        pulse_start = time.time()
+
+    while GPIO.input(ECHO) == GPIO.HIGH:
+        pulse_end = time.time()
+
+    pulse_duration = pulse_end - pulse_start
+    distance = pulse_duration * 17150
+    return distance
+
+def sendToThingSpeak(distance):
+    payload = {"api_key": api, "field1": distance}
+    try:
+        response = requests.post(URL, data=payload)
+        if response.status_code == 200:
+            print("Data sent successfully")
+        else:
+            print(response.status_code)
+    except Exception as e:
+        print(e)
+
+try:
+    while True:
+        distance = measure()
+        print(distance)
+
+        if distance < 100:
+            GPIO.output(LED_RED, GPIO.HIGH)
+            GPIO.output(LED_GREEN, GPIO.LOW)
+            send()
+            print("Parking space occupied")
+        else:
+            GPIO.output(LED_GREEN, GPIO.HIGH)
+            GPIO.output(LED_RED, GPIO.LOW)
+            print("Parking space available")
+
+        sendToThingSpeak(distance)
+        time.sleep(1)
+except KeyboardInterrupt:
+    GPIO.cleanup()
+            </pre
+        >
+      </div>
+
+      <div class="expContainer">
+        <h3>Pi Cam</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre>
+from subprocess import call
+import time
+import os
+import glob
+import smtplib
+import base64
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+import subprocess
+
+gmail_user = "Your_Email"
+gmail_pwd = "Your_Email_Password"
+FROM = "from_mail"
+TO = ["to_mail"]
+i = 1
+
+while i:
+    subprocess.Popen("raspistill -o cam4.jpg", shell=True)
+    time.sleep(5)
+    msg = MIMEMultipart()
+    time.sleep(1)
+    msg['Subject'] = "testing msg sent from python"
+    time.sleep(5)
+    fp = open("cam4.jpg", "rb")
+    time.sleep(1)
+    img = MIMEImage(fp.read())
+    fp.close()
+    time.sleep(1)
+    msg.attach(img)
+    time.sleep(1)
+
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        print("smtp gmail")
+        server.ehlo()
+        server.starttls()
+        server.login(gmail_user, gmail_pwd)
+        print("sending mail from python")
+        server.sendmail(FROM, TO, msg.as_string())
+        server.close()
+        print("successfully sent the mail")
+    except:
+        print("failed to send mail")
+            </pre
+        >
+      </div>
+
+      <div class="expContainer">
+        <h3>Traffic Light</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre>
+import RPi.GPIO as GPIO
+from time import sleep
+
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BOARD)
+
+GPIO.setup(3, GPIO.OUT)
+GPIO.setup(5, GPIO.OUT)
+GPIO.setup(11, GPIO.OUT)
+
+while True:
+    GPIO.output(3, GPIO.HIGH)
+    sleep(2)
+    GPIO.output(3, GPIO.LOW)
+    sleep(1)
+    GPIO.output(5, GPIO.HIGH)
+    sleep(2)
+    GPIO.output(5, GPIO.LOW)
+    sleep(1)
+    GPIO.output(11, GPIO.HIGH)
+    sleep(2)
+    GPIO.output(11, GPIO.LOW)
+    sleep(1)
+            </pre
+        >
+      </div>
+      <div class="expContainer">
+        <h3>Ultrasonic with Thinkspeak(Write)</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre>
+import time
+import urllib.request
+import RPi.GPIO as GPIO
+
+trig = 2
+echo = 4
+Thing = "https://api.thingspeak.com/update?api_key=Your_Api_Key"
+
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(trig, GPIO.OUT)
+GPIO.setup(echo, GPIO.IN)
+
+def read_distance():
+    GPIO.output(trig, True)
+    time.sleep(1)
+    GPIO.output(trig, False)
+    pulse_st = time.time()
+    while GPIO.input(echo) == 0:
+        pulse_st = time.time()
+    pulse_end = time.time()
+    while GPIO.input(echo) == 1:
+        pulse_end = time.time()
+    pulse_dur = pulse_end - pulse_st
+    distance = pulse_dur * 17150
+    distance = round(distance, 2)
+    return distance
+
+while True:
+    distance = read_distance()
+    print(distance)
+    url = Thing + '&field1={:.2f}'.format(distance)
+    urllib.request.urlopen(url)
+    time.sleep(1)
+            </pre
+        >
+      </div>
+
+      <div class="expContainer">
+        <h3>Ultrasonic with Thinkspeak(Read)</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre>
+import requests
+import RPi.GPIO as gp
+gp.setwarnings(False)
+
+url = "https://api.thingspeak.com/channels/Channel_Id/feeds.json"
+response = requests.get(url, verify=False)
+
+data = response.json()
+print("Data from the ThingSpeak.com using Read API:")
+feeds = data.get('feeds', [])
+for entry in feeds:
+    field1 = entry.get("field1")
+    print(field1)
+            </pre
+        >
+      </div>
+
+      <div class="expContainer">
+        <h3>WebPage Traffic Control</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre>
+&lt;html&gt;
+&lt;head&gt;
+&lt;meta name="viewport" content="width=device-width" /&gt;
+&lt;title&gt;LED Control&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+WEB PAGE ON PHP BASED GPIO Control:
+&lt;form method="get" action="gpio.php"&gt;
+    &lt;input type="submit" value="ON" name="on"&gt;
+    &lt;input type="submit" value="OFF" name="off"&gt;
+&lt;/form&gt;
+&lt;?php
+$setmode17 = shell_exec("/usr/local/bin/gpio -g mode 2 out");
+if (isset($_GET['on'])) {
+    $gpio_on = shell_exec("/usr/local/bin/gpio -g write 2 1");
+    echo "LED is on";
+} else if (isset($_GET['off'])) {
+    $gpio_off = shell_exec("/usr/local/bin/gpio -g write 2 0");
+    echo "LED is off";
+}
+?&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+                </pre
+        >
+      </div>
+
+      <div class="expContainer">
+        <h3>WebPage Traffic Control using 3 lights</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre>
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+    &lt;title&gt;LED&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;form method =&quot;get&quot; action =&quot;web.php&quot;&gt;
+        &lt;input type =&quot;hidden&quot; name =&quot;led&quot; value= &quot;1&quot;&gt;
+        &lt;button type=&quot;submit&quot; name =&quot;state&quot; value=&quot;on&quot;&gt;ON&lt;/button&gt;
+        &lt;button type=&quot;submit&quot; name =&quot;state&quot; value=&quot;off&quot;&gt;OFF&lt;/button&gt;
+    &lt;/form&gt;
+    &lt;form action=&quot;web.php&quot; method =&quot;get&quot;&gt;
+        &lt;input type=&quot;hidden&quot; name =&quot;led&quot; value = &quot;2&quot;&gt;
+        &lt;button type=&quot;submit&quot; name =&quot;state&quot; value=&quot;on&quot;&gt;ON&lt;/button&gt;
+        &lt;button type=&quot;submit&quot; name =&quot;state&quot; value=&quot;off&quot;&gt;OFF&lt;/button&gt;
+    &lt;/form&gt;
+    &lt;form action=&quot;web.php&quot; method =&quot;get&quot;&gt;
+        &lt;input type=&quot;hidden&quot; name =&quot;led&quot; value = &quot;3&quot;&gt;
+        &lt;button type=&quot;submit&quot; name =&quot;state&quot; value=&quot;on&quot;&gt;ON&lt;/button&gt;
+        &lt;button type=&quot;submit&quot; name =&quot;state&quot; value=&quot;off&quot;&gt;OFF&lt;/button&gt;
+    &lt;/form&gt;
+    &lt;?php
+        if(isset($_GET[&#39;led&#39;]) &amp;&amp; isset($_GET[&#39;state&#39;])){
+            $led = intval($_GET[&#39;led&#39;]);
+            $state = $_GET[&#39;state&#39;];
+            if($led == 1)
+            {
+                $pin = 17;
+            }
+            else if($led == 2)
+            {
+                $pin = 27;
+            }
+            else if($led == 3)
+            {
+                $pin = 22;
+            }
+            if($state == &quot;on&quot;)
+            {
+                $gpio_on = shell_exec(&quot;/usr/local/bin/gpio -g write $pin 1&quot;);
+                echo &quot;LED is on&quot;;
+            }
+            else if($state == &quot;off&quot;)
+            {
+                $gpio_off = shell_exec(&quot;/usr/local/bin/gpio -g write $pin 0&quot;);
+                echo &quot;LED is off&quot;;
+            }
+        }
+    ?&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+                </pre
+        >
+      </div>
+
+      <div class="expContainer">
+        <h3>Transfer a file from one bucket to the other using Lambda</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre>
+import json
+import boto3
+import time
+
+def lambda_handler(event, context):
+    start_time = time.time()
+    print(f"Received event: {json.dumps(event)}")
+
+    source_bucket = event['source_bucket']
+    destination_bucket = event['destination_bucket']
+    file_key = event['file_key']
+
+    s3 = boto3.client('s3')
+
+    try:
+        print(f"Starting file copy from {source_bucket} to {destination_bucket} for file: {file_key}")
+        
+        s3.copy_object(
+            CopySource={'Bucket': source_bucket, 'Key': file_key},
+            Bucket=destination_bucket,
+            Key=file_key
+        )
+
+        elapsed_time = time.time() - start_time
+        print(f"File copied successfully in {elapsed_time:.2f} seconds")
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps(f"File {file_key} transferred successfully in {elapsed_time:.2f} seconds.")
+        }
+
+    except Exception as e:
+        print(f"Error copying file: {e}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps(f"Error copying file: {str(e)}")
+        }
+            </pre
+        >
+      </div>
+      <div class="expContainer">
+        <h3>Above lambda function test json</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre>
+test json:
+{
+    "source_bucket": "value",
+    "destination_bucket": "value",
+    "file_key": "value"
+}</pre>      </div>
+
+      <div class="expContainer">
+        <h3>Aritmetic Cal using Lambda</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre>
+export const handler = async (event) => {
+    let {operation,num1,num2} = event;
+    let result = 0;
+    switch(operation) {
+      case 1:
+        result = num1 + num2;
+        break;
+      case 2:
+        result = num1 - num2;
+        break;
+      case 3:
+        result = num1 * num2;
+        break;
+      case 4:
+        result = num1 / num2;
+        break;
+      default:
+        result = -1;
+        break;
+    }
+    
+    const response = {
+      statusCode: 200,
+      body: result
+    };
+    return response;
+  };
+            </pre
+        >
+      </div>
+
+      <div class="expContainer">
+        <h3>html file - Aritmetic Cal using Lambda continuation</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre>
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+    &lt;title&gt;Arithmetic Operations&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Perform Arithmetic Operations&lt;/h1&gt;
+    &lt;form id=&quot;calcForm&quot;&gt;
+        &lt;input type=&quot;number&quot; id=&quot;num1&quot; placeholder=&quot;Enter first number&quot; required&gt;
+        &lt;input type=&quot;number&quot; id=&quot;num2&quot; placeholder=&quot;Enter second number&quot; required&gt;
+        &lt;select id=&quot;operation&quot;&gt;
+            &lt;option value=&quot;1&quot;&gt;Add&lt;/option&gt;
+            &lt;option value=&quot;2&quot;&gt;Subtract&lt;/option&gt;
+            &lt;option value=&quot;3&quot;&gt;Multiply&lt;/option&gt;
+            &lt;option value=&quot;4&quot;&gt;Divide&lt;/option&gt;
+        &lt;/select&gt;
+        &lt;button type=&quot;submit&quot;&gt;Calculate&lt;/button&gt;
+    &lt;/form&gt;
+    &lt;h2&gt;Result: &lt;span id=&quot;result&quot;&gt;N/A&lt;/span&gt;&lt;/h2&gt;
+    &lt;script&gt;
+        document.getElementById('calcForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const num1 = parseFloat(document.getElementById('num1').value);
+            const num2 = parseFloat(document.getElementById('num2').value);
+            const operation = parseInt(document.getElementById('operation').value);
+
+            // Replace with your API Gateway URL
+            const apiUrl = &quot;&lt;endpoint-of-api&gt;&quot;;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ num1, num2, operation })
+            });
+
+            const result = await response.json();
+            console.log(result);
+            document.getElementById('result').textContent = result.body || 'Error';
+        });
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+            </pre
+        >
+      </div>
+      <div class="expContainer">
+        <h3>SSH Command for AWS LINUX image</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre> SSH -i "your-key.pem" ec2-user@"Public ip address"</pre>
+      </div>
+ <div class="expContainer">
+        <h3>SSH Command for ubuntu image</h3>
+        <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        <pre> SSH -i "your-key.pem" ubuntu@"Public ip address"</pre>
+      </div>
+      <script>
+        function copyCode(button) {
+          const preElement = button.nextElementSibling;
+          const codeToCopy = preElement.innerText;
+          navigator.clipboard.writeText(codeToCopy);
+        }
+      </script>
+      <p style="text-align: center">
+        Developed and Maintained by <strong> The Developers...</strong>
+      </p>
+    </div>
+  </body>
+</html>
